@@ -1,4 +1,8 @@
 // Simple shared memo app
+
+import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js'
+import { getFirestore, collection, doc, setDoc } from 'https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js'
+
 const STORAGE_KEY = 'shared-memo:v1'
 const TITLE_KEY = 'shared-memo:title'
 const MAX_VISIBLE = 30
@@ -7,6 +11,7 @@ const el = id => document.getElementById(id)
 
 let memos = []
 let showAll = false
+let firebaseApp = null
 
 function load() {
   const raw = localStorage.getItem(STORAGE_KEY)
@@ -95,16 +100,16 @@ function exportToFile() {
 }
 
 async function syncToFirestore() {
-  if (typeof firebase === 'undefined' || typeof firebase.firestore === 'undefined') {
+  if (!firebaseApp) {
     alert('Firebaseが設定されていません。firebase-config.js を配置してください。')
     return
   }
   try {
-    const db = firebase.firestore()
-  const deviceName = localStorage.getItem('device-name') || null
-  const payload = {title: el('app-title').value, deviceName, memos, updated: new Date().toISOString()}
+    const db = getFirestore(firebaseApp)
+    const deviceName = localStorage.getItem('device-name') || null
+    const payload = {title: el('app-title').value, deviceName, memos, updated: new Date().toISOString()}
     // store in collection 'shared-memos' doc 'latest'
-    await db.collection('shared-memos').doc('latest').set(payload)
+    await setDoc(doc(collection(db, 'shared-memos'), 'latest'), payload)
     alert('同期が完了しました')
   } catch (e) {
     console.error(e)
@@ -172,9 +177,11 @@ window.addEventListener('DOMContentLoaded', () => {
     const raw = localStorage.getItem('firebase-config')
     if (raw) {
       const cfg = JSON.parse(raw)
-      if (typeof firebase !== 'undefined' && ( !firebase.apps || firebase.apps.length === 0)) {
-        firebase.initializeApp(cfg)
+      if (!getApps().length) {
+        firebaseApp = initializeApp(cfg)
         console.log('Firebase initialized from settings')
+      } else {
+        firebaseApp = getApps()[0]
       }
     }
   } catch (e) {
