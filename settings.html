@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>設定 - 共有メモ</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="title-wrap">
+      <a href="index.html">← 戻る</a>
+    </div>
+  </header>
+  <main style="padding:16px">
+    <h2>設定</h2>
+    <section>
+      <h3>デバイス名</h3>
+      <p>このブラウザ/デバイスを識別するための名前を入力してください。保存すると、同期時とファイル保存時に含まれます。</p>
+      <input id="device-name" placeholder="例: 自分のPC" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;margin-bottom:8px" />
+
+      <h3>Firestore 設定</h3>
+      <p>Firebase コンソールから取得した <code>firebaseConfig</code> オブジェクトを JSON 形式で貼り付けて保存してください。</p>
+      <textarea id="firebase-config-json" rows="8" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-family:monospace"></textarea>
+      <div style="margin-top:8px;display:flex;gap:8px">
+        <button id="save-config">保存</button>
+        <button id="clear-config">クリア</button>
+        <button id="test-sync">同期テスト</button>
+      </div>
+      <p style="margin-top:8px;color:#666;font-size:13px">保存すると、`index.html` を開いたときに自動で Firebase が初期化されます。</p>
+    </section>
+  </main>
+  <script>
+    const KEY = 'firebase-config'
+    const DEVICE_KEY = 'device-name'
+    const el = id => document.getElementById(id)
+    function loadConfig() {
+      const raw = localStorage.getItem(KEY)
+      if (raw) el('firebase-config-json').value = raw
+      const dev = localStorage.getItem(DEVICE_KEY)
+      if (dev) el('device-name').value = dev
+    }
+    function saveConfig() {
+      const txt = el('firebase-config-json').value.trim()
+      try {
+        if (txt) JSON.parse(txt)
+      } catch (e) {
+        alert('有効なJSONではありません: ' + e.message)
+        return
+      }
+      localStorage.setItem(KEY, txt)
+      const dev = el('device-name').value.trim()
+      if (dev) localStorage.setItem(DEVICE_KEY, dev)
+      alert('保存しました')
+    }
+    function clearConfig() {
+      localStorage.removeItem(KEY)
+      el('firebase-config-json').value = ''
+      // do not clear device-name here
+      alert('Firebase設定をクリアしました')
+    }
+    async function testSync() {
+      const txt = el('firebase-config-json').value.trim()
+      if (!txt) { alert('まずFirebase設定を入力して保存してください'); return }
+      try {
+        const cfg = JSON.parse(txt)
+        if (typeof firebase === 'undefined') {
+          alert('Firebase ライブラリが読み込まれていません。index.htmlから読み込んでください。')
+          return
+        }
+        if (!firebase.apps || firebase.apps.length === 0) {
+          firebase.initializeApp(cfg)
+        }
+        const db = firebase.firestore()
+        const dev = el('device-name').value.trim() || 'unknown-device'
+        await db.collection('shared-memos').doc('test-connection').set({ok:true, time: new Date().toISOString(), device: dev})
+        alert('同期テスト成功')
+      } catch (e) {
+        alert('同期テスト失敗: ' + (e.message || e))
+      }
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+      loadConfig()
+      el('save-config').addEventListener('click', saveConfig)
+      el('clear-config').addEventListener('click', clearConfig)
+      el('test-sync').addEventListener('click', testSync)
+    })
+  </script>
+</body>
+</html>

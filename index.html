@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>共有メモ</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+  <header class="app-header">
+    <div class="title-wrap">
+      <input id="app-title" class="app-title" value="共有メモ" aria-label="アプリタイトル" />
+    </div>
+    <button id="menu-btn" class="menu-btn" aria-label="メニュー">☰</button>
+  </header>
+
+  <div id="menu" class="menu hidden" role="menu" aria-hidden="true">
+    <button id="sync-btn">同期</button>
+    <button id="save-file-btn">ファイル保存</button>
+    <button id="settings-btn">設定</button>
+  </div>
+
+  <main>
+    <section class="add-form">
+      <textarea id="memo-input" placeholder="ここにメモを入力..." rows="3"></textarea>
+      <div class="form-actions">
+        <button id="add-btn">追加</button>
+      </div>
+    </section>
+
+    <section class="stats">
+      <div id="memo-count">メモ: 0</div>
+    </section>
+
+    <section id="memo-list" class="memo-list" aria-live="polite"></section>
+    <div id="show-all-wrap" class="show-all-wrap hidden">
+      <button id="show-all-btn">すべて表示</button>
+    </div>
+  </main>
+
+  <script src="firebase-config.example.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
