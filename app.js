@@ -1,7 +1,7 @@
 // Simple shared memo app
 
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js'
-import { getFirestore, collection, doc, setDoc } from 'https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js'
+import { getFirestore, collection, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js'
 
 const STORAGE_KEY = 'shared-memo:v1'
 const TITLE_KEY = 'shared-memo:title'
@@ -101,15 +101,43 @@ function exportToFile() {
 
 async function syncToFirestore() {
   if (!firebaseApp) {
-    alert('Firebaseが設定されていません。firebase-config.js を配置してください。')
+    alert('Firebaseが設定されていません。設定画面でFirebaseの設定を入力して下さい。')
     return
   }
   try {
-    const db = getFirestore(firebaseApp)
     const deviceName = localStorage.getItem('device-name') || null
+    const db = getFirestore(firebaseApp)
+    const c = collection(db, 'shared-memo')
+    const d = doc(c, 'latest')
+
+    // 1) pull remote
+    const snapshot = await getDoc(d)
+    const remoteData = snapshot.exists() ? snapshot.data() : null
+    const remoteMemos = remoteData && Array.isArray(remoteData.memos) ? remoteData.memos : []
+
+    // 2) merge remote and local memos, dedupe by id, keep the newest by updated/created
+    const combined = [...remoteMemos, ...memos]
+    const map = new Map()
+    combined.forEach(item => {
+      if (!item || typeof item.id === 'undefined') return
+      const key = item.id
+      const existing = map.get(key)
+      const t = Date.parse(item.updated || item.created || item.id) || 0
+      if (!existing) {
+        map.set(key, item)
+      } else {
+        const et = Date.parse(existing.updated || existing.created || existing.id) || 0
+        if (t > et) map.set(key, item)
+      }
+    })
+    const merged = Array.from(map.values()).sort((a,b) => (Date.parse(b.updated || b.created || b.id) || 0) - (Date.parse(a.updated || a.created || a.id) || 0))
+
+    // 3) save locally and push merged to Firestore
+    memos = merged
+    save()
+
     const payload = {title: el('app-title').value, deviceName, memos, updated: new Date().toISOString()}
-    // store in collection 'shared-memos' doc 'latest'
-    await setDoc(doc(collection(db, 'shared-memos'), 'latest'), payload)
+    await setDoc(d, payload)
     alert('同期が完了しました')
   } catch (e) {
     console.error(e)
