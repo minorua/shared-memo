@@ -115,22 +115,46 @@ async function syncToFirestore() {
     const remoteData = snapshot.exists() ? snapshot.data() : null
     const remoteMemos = remoteData && Array.isArray(remoteData.memos) ? remoteData.memos : []
 
-    // 2) merge remote and local memos, dedupe by id, keep the newest by updated/created
-    const combined = [...remoteMemos, ...memos]
-    const map = new Map()
-    combined.forEach(item => {
-      if (!item || typeof item.id === 'undefined') return
-      const key = item.id
-      const existing = map.get(key)
-      const t = Date.parse(item.updated || item.created || item.id) || 0
-      if (!existing) {
-        map.set(key, item)
+    // 2) merge remote and local memos
+    // Rule: if local memo has been modified (has `updated` or text differs), prefer local
+    // Otherwise prefer the newest by timestamp
+    const remoteMap = new Map()
+    remoteMemos.forEach(r => { if (r && typeof r.id !== 'undefined') remoteMap.set(String(r.id), r) })
+
+    const mergedMap = new Map()
+
+    // start by adding remote items
+    remoteMemos.forEach(r => { if (r && typeof r.id !== 'undefined') mergedMap.set(String(r.id), r) })
+
+    // merge local, preferring local when modified
+    memos.forEach(local => {
+      if (!local || typeof local.id === 'undefined') return
+      const id = String(local.id)
+      const remote = remoteMap.get(id)
+      if (!remote) {
+        // local-only
+        mergedMap.set(id, local)
+        return
+      }
+
+      const localText = (local.text || '').trim()
+      const remoteText = (remote.text || '').trim()
+      const localUpdatedTs = local.updated ? Date.parse(local.updated) : null
+      const remoteUpdatedTs = remote.updated ? Date.parse(remote.updated) : null
+
+      if (localUpdatedTs || localText !== remoteText) {
+        // local appears modified -> prefer local
+        mergedMap.set(id, local)
       } else {
-        const et = Date.parse(existing.updated || existing.created || existing.id) || 0
-        if (t > et) map.set(key, item)
+        // neither appears modified locally; pick the newest by timestamp
+        const localTs = Date.parse(local.updated || local.created || local.id) || 0
+        const remoteTs = Date.parse(remote.updated || remote.created || remote.id) || 0
+        if (remoteTs > localTs) mergedMap.set(id, remote)
+        else mergedMap.set(id, local)
       }
     })
-    const merged = Array.from(map.values()).sort((a,b) => (Date.parse(b.updated || b.created || b.id) || 0) - (Date.parse(a.updated || a.created || a.id) || 0))
+
+    const merged = Array.from(mergedMap.values()).sort((a,b) => (Date.parse(b.updated || b.created || b.id) || 0) - (Date.parse(a.updated || a.created || a.id) || 0))
 
     // 3) save locally and push merged to Firestore
     memos = merged
