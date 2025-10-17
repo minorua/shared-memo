@@ -154,7 +154,8 @@ async function syncToFirestore() {
       }
     })
 
-    const merged = Array.from(mergedMap.values()).sort((a,b) => (Date.parse(b.updated || b.created || b.id) || 0) - (Date.parse(a.updated || a.created || a.id) || 0))
+    // Sort by created date (newest first)
+    const merged = Array.from(mergedMap.values()).sort((a,b) => (Date.parse(b.created) || 0) - (Date.parse(a.created) || 0))
 
     // 3) save locally and push merged to Firestore
     memos = merged
