@@ -154,6 +154,8 @@ async function syncToFirestore() {
     const payload = {title: el('app-title').value, deviceName, memos, updated: new Date().toISOString()}
         await setDoc(d, payload)
     alert('同期が完了しました')
+
+    render()
   } catch (e) {
     console.error(e)
     alert('同期に失敗しました: '+e.message)
