@@ -22,4 +22,5 @@ body{font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Hiragi
 .menu button{background:transparent;border:0;padding:8px 10px;text-align:left}
 .show-all-wrap{padding:8px 16px;display:flex;justify-content:center}
 .hidden{display:none}
+button{cursor:pointer}
 @media (min-width:600px){.app-title{font-size:20px}}
