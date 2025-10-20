@@ -348,7 +348,12 @@ window.addEventListener('DOMContentLoaded', () => {
   el('app-title').addEventListener('change', saveTitle)
 
   // register service worker
-  if ('serviceWorker' in navigator) {
-    // navigator.serviceWorker.register('service-worker.js').catch(err => console.error('SW登録失敗', err))
+  const params = new URLSearchParams(window.location.search);
+  if ('serviceWorker' in navigator && params.has('cache')) {
+    navigator.serviceWorker.register('service-worker.js').then(result => {
+      console.log('Service worker is registered.')
+    }).catch(err => {
+      console.error('SW登録失敗', err)
+    })
   }
 })
