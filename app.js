@@ -302,6 +302,13 @@ window.addEventListener('DOMContentLoaded', () => {
     console.warn('Failed to init firebase from settings', e)
   }
 
+  el('memo-input').addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault()
+      el('add-btn').click()
+    }
+  });
+
   el('add-btn').addEventListener('click', () => {
     const txt = el('memo-input').value.trim()
     if (!txt) return
