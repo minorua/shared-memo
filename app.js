@@ -2,6 +2,7 @@
 
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js'
 import { getFirestore, collection, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js'
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js'
 
 const STORAGE_KEY = 'shared-memo:v1'
 const TITLE_KEY = 'shared-memo:title'
@@ -12,6 +13,8 @@ const el = id => document.getElementById(id)
 let memos = []
 let showAll = false
 let firebaseApp = null
+let auth = null
+let currentUser = null
 
 function load() {
   const raw = localStorage.getItem(STORAGE_KEY)
@@ -106,6 +109,15 @@ async function syncToFirestore() {
   }
   try {
     const deviceName = localStorage.getItem('device-name') || null
+    const allowed = localStorage.getItem('allowed-email') || null
+    if (!currentUser) {
+      alert('Firestore同期にはGoogleアカウントでのサインインが必要です。右上のサインインボタンからログインしてください。')
+      return
+    }
+    if (allowed && currentUser.email !== allowed) {
+      alert(`同期が許可されていないアカウントです: ${currentUser.email}`)
+      return
+    }
     const db = getFirestore(firebaseApp)
     const c = collection(db, 'shared-memo')
     const d = doc(c, 'latest')
@@ -228,6 +240,17 @@ window.addEventListener('DOMContentLoaded', () => {
       } else {
         firebaseApp = getApps()[0]
       }
+      // init auth
+      try {
+        auth = getAuth(firebaseApp)
+        onAuthStateChanged(auth, user => {
+          currentUser = user
+          const authBtn = document.getElementById('auth-btn')
+          if (authBtn) authBtn.textContent = user ? `サインアウト (${user.email})` : 'サインイン'
+        })
+      } catch (e) {
+        console.warn('Auth init failed', e)
+      }
     }
   } catch (e) {
     console.warn('Failed to init firebase from settings', e)
@@ -241,6 +264,20 @@ window.addEventListener('DOMContentLoaded', () => {
   })
 
   el('menu-btn').addEventListener('click', toggleMenu)
+  const authBtn = document.getElementById('auth-btn')
+  if (authBtn) {
+    authBtn.addEventListener('click', async () => {
+      if (!auth) { alert('Authが利用できません。Firebase設定を確認してください。'); return }
+      if (currentUser) {
+        try { await signOut(auth); alert('サインアウトしました') } catch(e){ alert('サインアウト失敗') }
+      } else {
+        try {
+          const provider = new GoogleAuthProvider()
+          await signInWithPopup(auth, provider)
+        } catch(e) { alert('サインイン失敗: ' + (e.message||e)) }
+      }
+    })
+  }
   el('sync-btn').addEventListener('click', () => { toggleMenu(); syncToFirestore() })
   el('save-file-btn').addEventListener('click', () => { toggleMenu(); exportToFile() })
   el('settings-btn').addEventListener('click', () => { toggleMenu(); window.location = 'settings.html' })

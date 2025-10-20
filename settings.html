@@ -22,6 +22,9 @@
       <h3>Firestore 設定</h3>
       <p>Firebase コンソールから取得した <code>firebaseConfig</code> オブジェクトを JSON 形式で貼り付けて保存してください。</p>
       <textarea id="firebase-config-json" rows="8" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-family:monospace"></textarea>
+      <h3>同期許可アカウント</h3>
+      <p>同期を許可する Google アカウント（メールアドレス）を入力してください。例: yourname@gmail.com</p>
+      <input id="allowed-email" placeholder="例: yourname@gmail.com" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;margin:8px 0 12px 0" />
       <div style="margin-top:8px;display:flex;gap:8px">
         <button id="save-config">保存</button>
         <button id="clear-config">クリア</button>
@@ -31,14 +34,17 @@
     </section>
   </main>
   <script>
-    const KEY = 'firebase-config'
-    const DEVICE_KEY = 'device-name'
+  const KEY = 'firebase-config'
+  const DEVICE_KEY = 'device-name'
+  const ALLOWED_KEY = 'allowed-email'
     const el = id => document.getElementById(id)
     function loadConfig() {
       const raw = localStorage.getItem(KEY)
       if (raw) el('firebase-config-json').value = raw
       const dev = localStorage.getItem(DEVICE_KEY)
       if (dev) el('device-name').value = dev
+      const allowed = localStorage.getItem(ALLOWED_KEY)
+      if (allowed) el('allowed-email').value = allowed
     }
     function saveConfig() {
       const txt = el('firebase-config-json').value.trim()
@@ -51,6 +57,8 @@
       localStorage.setItem(KEY, txt)
       const dev = el('device-name').value.trim()
       if (dev) localStorage.setItem(DEVICE_KEY, dev)
+      const allowed = el('allowed-email').value.trim()
+      if (allowed) localStorage.setItem(ALLOWED_KEY, allowed)
       alert('保存しました')
     }
     function clearConfig() {
