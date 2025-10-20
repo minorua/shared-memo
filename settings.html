@@ -22,51 +22,40 @@
       <h3>Firestore 設定</h3>
       <p>Firebase コンソールから取得した <code>firebaseConfig</code> オブジェクトを JSON 形式で貼り付けて保存してください。</p>
       <textarea id="firebase-config-json" rows="8" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-family:monospace"></textarea>
-      <h3>同期許可アカウント</h3>
-      <p>同期を許可する Google アカウント（メールアドレス）を入力してください。例: yourname@gmail.com</p>
-      <input id="allowed-email" placeholder="例: yourname@gmail.com" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;margin:8px 0 12px 0" />
       <div style="margin-top:8px;display:flex;gap:8px">
         <button id="save-config">保存</button>
-        <button id="clear-config">クリア</button>
         <button id="test-sync">同期テスト</button>
       </div>
       <p style="margin-top:8px;color:#666;font-size:13px">保存すると、`index.html` を開いたときに自動で Firebase が初期化されます。</p>
     </section>
   </main>
   <script>
-  const KEY = 'firebase-config'
-  const DEVICE_KEY = 'device-name'
-  const ALLOWED_KEY = 'allowed-email'
+    const KEY = 'firebase-config'
+    const DEVICE_KEY = 'device-name'
     const el = id => document.getElementById(id)
+
     function loadConfig() {
       const raw = localStorage.getItem(KEY)
       if (raw) el('firebase-config-json').value = raw
       const dev = localStorage.getItem(DEVICE_KEY)
       if (dev) el('device-name').value = dev
-      const allowed = localStorage.getItem(ALLOWED_KEY)
-      if (allowed) el('allowed-email').value = allowed
     }
+
     function saveConfig() {
+      const dev = el('device-name').value.trim()
+      localStorage.setItem(DEVICE_KEY, dev)
+
       const txt = el('firebase-config-json').value.trim()
       try {
         if (txt) JSON.parse(txt)
       } catch (e) {
-        alert('有効なJSONではありません: ' + e.message)
+        alert('Firebase設定の入力内容が有効なJSONではありません: ' + e.message)
         return
       }
       localStorage.setItem(KEY, txt)
-      const dev = el('device-name').value.trim()
-      if (dev) localStorage.setItem(DEVICE_KEY, dev)
-      const allowed = el('allowed-email').value.trim()
-      if (allowed) localStorage.setItem(ALLOWED_KEY, allowed)
       alert('保存しました')
     }
-    function clearConfig() {
-      localStorage.removeItem(KEY)
-      el('firebase-config-json').value = ''
-      // do not clear device-name here
-      alert('Firebase設定をクリアしました')
-    }
+
     async function testSync() {
       const txt = el('firebase-config-json').value.trim()
       if (!txt) { alert('まずFirebase設定を入力して保存してください'); return }
@@ -81,16 +70,16 @@
         }
         const db = firebase.firestore()
         const dev = el('device-name').value.trim() || 'unknown-device'
-        await db.collection('shared-memos').doc('test-connection').set({ok:true, time: new Date().toISOString(), device: dev})
+        await db.collection('shared-emos').doc('test-connection').set({ok:true, time: new Date().toISOString(), device: dev})
         alert('同期テスト成功')
       } catch (e) {
         alert('同期テスト失敗: ' + (e.message || e))
       }
     }
+
     document.addEventListener('DOMContentLoaded', () => {
       loadConfig()
       el('save-config').addEventListener('click', saveConfig)
-      el('clear-config').addEventListener('click', clearConfig)
       el('test-sync').addEventListener('click', testSync)
     })
   </script>
