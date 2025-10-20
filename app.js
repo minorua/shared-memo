@@ -121,14 +121,13 @@ async function syncToFirestore() {
     const remoteMap = new Map()
     remoteMemos.forEach(r => { if (r && typeof r.id !== 'undefined') remoteMap.set(String(r.id), r) })
 
-    const mergedMap = new Map()
-
     // start by adding remote items
-    remoteMemos.forEach(r => { if (r && typeof r.id !== 'undefined') mergedMap.set(String(r.id), r) })
+    const mergedMap = new Map(remoteMap)
 
     // merge local, preferring local when modified
     memos.forEach(local => {
       if (!local || typeof local.id === 'undefined') return
+
       const id = String(local.id)
       const remote = remoteMap.get(id)
       if (!remote) {
@@ -137,21 +136,12 @@ async function syncToFirestore() {
         return
       }
 
-      const localText = (local.text || '').trim()
-      const remoteText = (remote.text || '').trim()
-      const localUpdatedTs = local.updated ? Date.parse(local.updated) : null
-      const remoteUpdatedTs = remote.updated ? Date.parse(remote.updated) : null
+      const localTs = Date.parse(local.updated || local.created || local.id) || 0
+      const remoteTs = Date.parse(remote.updated || remote.created || remote.id) || 0
 
-      if (localUpdatedTs || localText !== remoteText) {
-        // local appears modified -> prefer local
-        mergedMap.set(id, local)
-      } else {
-        // neither appears modified locally; pick the newest by timestamp
-        const localTs = Date.parse(local.updated || local.created || local.id) || 0
-        const remoteTs = Date.parse(remote.updated || remote.created || remote.id) || 0
-        if (remoteTs > localTs) mergedMap.set(id, remote)
-        else mergedMap.set(id, local)
-      }
+      // pick the newest by timestamp
+      if (remoteTs > localTs) mergedMap.set(id, remote)
+      else mergedMap.set(id, local)
     })
 
     // Sort by created date (newest first)
@@ -162,7 +152,7 @@ async function syncToFirestore() {
     save()
 
     const payload = {title: el('app-title').value, deviceName, memos, updated: new Date().toISOString()}
-    await setDoc(d, payload)
+        await setDoc(d, payload)
     alert('同期が完了しました')
   } catch (e) {
     console.error(e)
