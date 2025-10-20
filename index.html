@@ -27,6 +27,12 @@
   <main>
     <section class="add-form">
       <textarea id="memo-input" placeholder="ここにメモを入力..." rows="3"></textarea>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button id="template-btn">定型文</button>
+        <div id="template-popup" class="menu hidden" style="position:relative;left:0;top:0;">
+          <div id="template-list" style="display:flex;flex-direction:column;gap:6px;padding:8px;min-width:200px"></div>
+        </div>
+      </div>
       <div class="form-actions">
         <button id="add-btn">追加</button>
       </div>

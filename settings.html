@@ -19,9 +19,14 @@
       <p>このブラウザ/デバイスを識別するための名前を入力してください。保存すると、同期時とファイル保存時に含まれます。</p>
       <input id="device-name" placeholder="例: 自分のPC" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;margin-bottom:8px" />
 
+      <h3>定型文リスト</h3>
+      <p>1行につき1つの定型文を入力してください。保存後、メモ入力画面の「定型文」ボタンから選べます。</p>
+      <textarea id="templates" rows="6" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-family:monospace"></textarea>
+
       <h3>Firestore 設定</h3>
       <p>Firebase コンソールから取得した <code>firebaseConfig</code> オブジェクトを JSON 形式で貼り付けて保存してください。</p>
       <textarea id="firebase-config-json" rows="8" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-family:monospace"></textarea>
+
       <div style="margin-top:8px;display:flex;gap:8px">
         <button id="save-config">保存</button>
         <button id="test-sync">同期テスト</button>
@@ -39,6 +44,8 @@
       if (raw) el('firebase-config-json').value = raw
       const dev = localStorage.getItem(DEVICE_KEY)
       if (dev) el('device-name').value = dev
+      const tpl = localStorage.getItem('templates')
+      if (tpl) el('templates').value = tpl
     }
 
     function saveConfig() {
@@ -53,6 +60,8 @@
         return
       }
       localStorage.setItem(KEY, txt)
+      const tpltxt = el('templates').value || ''
+      localStorage.setItem('templates', tpltxt)
       alert('保存しました')
     }
 

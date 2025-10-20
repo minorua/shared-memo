@@ -102,6 +102,52 @@ function exportToFile() {
   URL.revokeObjectURL(url)
 }
 
+// Templates
+function loadTemplates() {
+  const raw = localStorage.getItem('templates') || ''
+  // split by lines and filter empty
+  return raw.split('\n').map(s => s.trim()).filter(s => s.length > 0)
+}
+
+function showTemplatePopup(anchorEl) {
+  const popup = document.getElementById('template-popup')
+  const list = document.getElementById('template-list')
+  list.innerHTML = ''
+  const templates = loadTemplates()
+  if (templates.length === 0) {
+    const p = document.createElement('div')
+    p.textContent = '定型文がありません。設定で追加してください。'
+    list.appendChild(p)
+  } else {
+    templates.forEach(t => {
+      const b = document.createElement('button')
+      b.textContent = t
+      b.addEventListener('click', () => {
+        insertAtCaret(el('memo-input'), t)
+        popup.classList.add('hidden')
+      })
+      list.appendChild(b)
+    })
+  }
+  // position popup near anchor
+  const rect = anchorEl.getBoundingClientRect()
+  popup.style.position = 'absolute'
+  popup.style.left = rect.left + 'px'
+  popup.style.top = (rect.bottom + window.scrollY + 8) + 'px'
+  popup.classList.remove('hidden')
+}
+
+function insertAtCaret(textarea, text) {
+  textarea.focus()
+  const start = textarea.selectionStart || 0
+  const end = textarea.selectionEnd || 0
+  const value = textarea.value
+  const newValue = value.slice(0, start) + text + value.slice(end)
+  textarea.value = newValue
+  const pos = start + text.length
+  textarea.selectionStart = textarea.selectionEnd = pos
+}
+
 async function syncToFirestore() {
   if (!firebaseApp) {
     alert('Firebaseが設定されていません。設定画面でFirebaseの設定を入力して下さい。')
@@ -264,6 +310,13 @@ window.addEventListener('DOMContentLoaded', () => {
   })
 
   el('menu-btn').addEventListener('click', toggleMenu)
+  const tplBtn = document.getElementById('template-btn')
+  if (tplBtn) tplBtn.addEventListener('click', (e) => { e.stopPropagation(); showTemplatePopup(tplBtn) })
+  // close popup when clicking elsewhere
+  document.addEventListener('click', () => {
+    const popup = document.getElementById('template-popup')
+    if (popup) popup.classList.add('hidden')
+  })
   const authBtn = document.getElementById('auth-btn')
   if (authBtn) {
     authBtn.addEventListener('click', async () => {
