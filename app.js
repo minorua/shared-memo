@@ -110,24 +110,24 @@ function loadTemplates() {
 }
 
 function showTemplatePopup(anchorEl) {
-  const popup = document.getElementById('template-popup')
-  const list = document.getElementById('template-list')
-  list.innerHTML = ''
-  const templates = loadTemplates()
-  if (templates.length === 0) {
-    const p = document.createElement('div')
-    p.textContent = '定型文がありません。設定で追加してください。'
-    list.appendChild(p)
-  } else {
-    templates.forEach(t => {
-      const b = document.createElement('button')
-      b.textContent = t
-      b.addEventListener('click', () => {
-        insertAtCaret(el('memo-input'), t)
-        popup.classList.add('hidden')
+  const popup = el('template-popup')
+  const list = el('template-list')
+  if (list.innerHTML == '') {
+    const templates = loadTemplates()
+    if (templates.length === 0) {
+      const p = document.createElement('div')
+      p.textContent = '定型文がありません。設定で追加してください。'
+      list.appendChild(p)
+    } else {
+      templates.forEach(t => {
+        const b = document.createElement('button')
+        b.textContent = t
+        b.addEventListener('click', () => {
+          insertAtCaret(el('memo-input'), t)
+        })
+        list.appendChild(b)
       })
-      list.appendChild(b)
-    })
+    }
   }
   // position popup near anchor
   const rect = anchorEl.getBoundingClientRect()
@@ -291,7 +291,7 @@ window.addEventListener('DOMContentLoaded', () => {
         auth = getAuth(firebaseApp)
         onAuthStateChanged(auth, user => {
           currentUser = user
-          const authBtn = document.getElementById('auth-btn')
+          const authBtn = el('auth-btn')
           if (authBtn) authBtn.textContent = user ? `サインアウト (${user.email})` : 'サインイン'
         })
       } catch (e) {
@@ -310,14 +310,16 @@ window.addEventListener('DOMContentLoaded', () => {
   })
 
   el('menu-btn').addEventListener('click', toggleMenu)
-  const tplBtn = document.getElementById('template-btn')
-  if (tplBtn) tplBtn.addEventListener('click', (e) => { e.stopPropagation(); showTemplatePopup(tplBtn) })
-  // close popup when clicking elsewhere
-  document.addEventListener('click', () => {
-    const popup = document.getElementById('template-popup')
-    if (popup) popup.classList.add('hidden')
+
+  const tplBtn = el('template-btn')
+  if (tplBtn) tplBtn.addEventListener('click', (e) => {
+    e.stopPropagation()
+    const popup = el('template-popup')
+    if (popup.classList.contains('hidden')) showTemplatePopup(tplBtn)
+    else popup.classList.add('hidden')
   })
-  const authBtn = document.getElementById('auth-btn')
+
+  const authBtn = el('auth-btn')
   if (authBtn) {
     authBtn.addEventListener('click', async () => {
       if (!auth) { alert('Authが利用できません。Firebase設定を確認してください。'); return }
