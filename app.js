@@ -88,14 +88,29 @@ function toggleMenu() {
   menu.setAttribute('aria-hidden', hidden)
 }
 
+function currentDateTime() {
+  const now = new Date()
+  const pad = (n) => n.toString().padStart(2, '0')
+
+  return now.getFullYear().toString() +
+         pad(now.getMonth() + 1) +
+         pad(now.getDate()) +
+         pad(now.getHours()) +
+         pad(now.getMinutes()) +
+         pad(now.getSeconds());
+}
+
 function exportToFile() {
-  const deviceName = localStorage.getItem('device-name') || null
-  const payload = {title: el('app-title').value, deviceName, memos}
-  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'})
+  const lines = []
+  memos.forEach(m => {
+    lines.push(new Date(m.created).toLocaleString().replaceAll('/', '-') + '\t' + m.text.replaceAll('\t', '\\t') + '\n')
+  })
+
+  const blob = new Blob([lines.join('')], {type:'text/plain'})
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `${(el('app-title').value||'shared-memo')}.json`
+  a.download = `${('memo' + currentDateTime())}.tsv`
   document.body.appendChild(a)
   a.click()
   a.remove()
